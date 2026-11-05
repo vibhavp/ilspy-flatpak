@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+    <packageSources>
+        <clear />
+        <add key="nuget-sources" value="BUILD_DIR/nuget-sources" />
+    </packageSources>
+</configuration>

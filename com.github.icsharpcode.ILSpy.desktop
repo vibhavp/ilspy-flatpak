@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=ILSpy
+Comment=.NET assembly browser and decompiler
+Categories=Development;
+
+Exec=ILSpy %F
+Terminal=false
+Icon=com.github.icsharpcode.ILSpy
+MimeType=application/x-msdownload;application/vnd.microsoft.portable-executable;

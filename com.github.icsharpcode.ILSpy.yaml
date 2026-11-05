@@ -1,0 +1,69 @@
+id: com.github.icsharpcode.ILSpy
+runtime: org.freedesktop.Platform
+runtime-version: "25.08"
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.dotnet10
+build-options:
+  prepend-path: "/usr/lib/sdk/dotnet10/bin"
+  append-ld-library-path: "/usr/lib/sdk/dotnet10/lib"
+  prepend-pkg-config-path: "/usr/lib/sdk/dotnet10/lib/pkgconfig"
+
+command: ILSpy
+
+finish-args:
+  - --device=dri
+  # - --socket=wayland
+  - --socket=x11
+  - --share=ipc
+  - --env=DOTNET_ROOT=/app/lib/dotnet
+
+modules:
+  - name: dotnet
+    buildsystem: simple
+    build-commands:
+    - /usr/lib/sdk/dotnet10/bin/install.sh
+
+  - name: powershell
+    buildsystem: simple
+    sources:
+      - type: archive
+        only-arches: [x86_64]
+        url: https://github.com/PowerShell/PowerShell/releases/download/v7.6.9/powershell-7.6.9-linux-x64.tar.gz
+        strip-components: 0
+        sha256: 1da6d6d6035d651f20e70ddee7c4c15ac6ab8b9fb40ee92240d91263f28a884b
+      - type: archive
+        only-arches: [aarch64]
+        url: https://github.com/PowerShell/PowerShell/releases/download/v7.6.9/powershell-7.6.9-linux-arm64.tar.gz
+        strip-components: 0
+        sha256: 02eb9991af447c7e7fe881acde195961afd397c40b8eb1c2b3856b84ec2d85f2
+    build-commands:
+      - mkdir ${FLATPAK_DEST}/pwsh
+      - cp -a . ${FLATPAK_DEST}/pwsh
+    cleanup:
+      - "/app/pwsh"
+
+  - name: ILSpy
+    buildsystem: simple
+    sources:
+      - type: git
+        url: https://github.com/icsharpcode/ILSpy.git
+        tag: v11.1
+      - ./nuget-sources.json
+      - type: file
+        path: nuget.config.xml.in
+        dest-filename: nuget.config
+      - type: file
+        path: com.github.icsharpcode.ILSpy.desktop
+    build-options:
+      prepend-path: "/app/pwsh"
+      env:
+      - DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: true
+    build-commands:
+      - sed -i 's/11.0.0/10.0.0/' global.json
+      - sed -i 's/BUILD_DIR/${FLATPAK_BUILDER_BUILDDIR}/g' nuget.config
+      - dotnet publish ILSpy/ILSpy.csproj -c Release --self-contained --source ./nuget-sources --source /usr/lib/sdk/dotnet10/nuget/packages -p:DebugType=embedded -p:GITHUB_ACTIONS="true" -v d
+    post-install:
+      - cp -a ${FLATPAK_BUILDER_BUILDDIR}/ILSpy/bin/Release/net10.0/linux-x64/. ${FLATPAK_DEST}/bin
+      - install -m644 -D -t /app/share/applications ${FLATPAK_BUILDER_BUILDDIR}/com.github.icsharpcode.ILSpy.desktop
+      - install -m644 -D -T ${FLATPAK_BUILDER_BUILDDIR}/BuildTools/packaging/linux/ilspy.png /app/share/icons/hicolor/256x256/apps/com.github.icsharpcode.ILSpy.png
